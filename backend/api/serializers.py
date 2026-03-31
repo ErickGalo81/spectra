@@ -1,16 +1,27 @@
 from rest_framework import serializers
-from .models import Aluno, PEI
+from django.contrib.auth.models import User
+from .models import Aluno, PEI, EvolucaoDiaria
 
-class AlunoSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Aluno
+        model = User
+        fields = ['id', 'username', 'email', 'first_name']
+
+class EvolucaoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EvolucaoDiaria
         fields = '__all__'
 
-# NOVO SERIALIZER
 class PEISerializer(serializers.ModelSerializer):
-    # Isso traz o nome do aluno junto com o ID na hora de listar
-    aluno_nome = serializers.ReadOnlyField(source='aluno.nome') 
+    aluno_nome = serializers.ReadOnlyField(source='aluno.nome')
 
     class Meta:
         model = PEI
+        fields = '__all__'
+
+class AlunoSerializer(serializers.ModelSerializer):
+    professor_nome = serializers.ReadOnlyField(source='professor.first_name')
+    
+    class Meta:
+        model = Aluno
         fields = '__all__'
