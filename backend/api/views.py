@@ -1,54 +1,76 @@
-from rest_framework import viewsets, generics
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.contrib.auth.models import User
-
 from .models import Professor, Aluno, PEI, LaudoMedico, EvolucaoDiaria
+
+# ==========================================
+# 1. LOGICA DE CADASTRO (PROFESSOR)
+# ==========================================
+class RegistroUsuarioView(APIView):
+    # AllowAny: Permite que qualquer pessoa acesse para se cadastrar
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        data = request.data
+        try:
+            # Criando o usuário base do Django
+            # O Frontend deve enviar: nome, email, password, instituicao
+            user = User.objects.create_user(
+                username=data.get('email'), # Usamos o email como login
+                email=data.get('email'),
+                password=data.get('password'),
+                first_name=data.get('nome', '')
+            )
+            
+            # Criando o perfil do Professor vinculado ao usuário
+            # Aqui é onde salvamos a INSTITUIÇÃO que você queria
+            Professor.objects.create(
+                user=user,
+                instituicao=data.get('instituicao', 'Não informada'),
+                especialidade=data.get('especialidade', '')
+            )
+            
+            return Response(
+                {"msg": "Professor cadastrado com sucesso!"}, 
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Erro ao cadastrar: {str(e)}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+# ==========================================
+# 2. VIEWSETS (CRUD AUTOMÁTICO)
+# ==========================================
+# Isso permite criar, editar, listar e deletar via API
+
 from .serializers import (
     ProfessorSerializer, AlunoSerializer, PEISerializer, 
-    LaudoMedicoSerializer, EvolucaoSerializer, UserSerializer
+    LaudoMedicoSerializer, EvolucaoDiariaSerializer
 )
-
-# ==========================================
-# 1. VIEW DE CADASTRO (Aberto para o Next.js)
-# ==========================================
-class RegistroUsuarioView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    # Permite que pessoas sem login possam criar a conta
-    permission_classes = [AllowAny] 
-
-# ==========================================
-# 2. VIEWSETS PROTEGIDOS (Precisam do Token JWT)
-# ==========================================
 
 class ProfessorViewSet(viewsets.ModelViewSet):
     queryset = Professor.objects.all()
     serializer_class = ProfessorSerializer
-    permission_classes = [IsAuthenticated]
 
 class AlunoViewSet(viewsets.ModelViewSet):
+    queryset = Aluno.objects.all()
     serializer_class = AlunoSerializer
-    permission_classes = [IsAuthenticated] # Trava a porta!
-
+    
+    # Filtra para o professor logado ver apenas os SEUS alunos
     def get_queryset(self):
-        # SEGURANÇA: O professor só vê a lista dos SEUS alunos, e não os de outros professores.
-        return Aluno.objects.filter(professor=self.request.user)
-
-    def perform_create(self, serializer):
-        # MÁGICA: Pega o professor dono do Token e amarra ao aluno que está sendo salvo.
-        serializer.save(professor=self.request.user)
-
-class PEIViewSet(viewsets.ModelViewSet):
-    queryset = PEI.objects.all()
-    serializer_class = PEISerializer
-    permission_classes = [IsAuthenticated]
+        return Aluno.objects.filter(professor__user=self.request.user)
 
 class LaudoMedicoViewSet(viewsets.ModelViewSet):
     queryset = LaudoMedico.objects.all()
     serializer_class = LaudoMedicoSerializer
-    permission_classes = [IsAuthenticated]
+
+class PEIViewSet(viewsets.ModelViewSet):
+    queryset = PEI.objects.all()
+    serializer_class = PEISerializer
 
 class EvolucaoViewSet(viewsets.ModelViewSet):
     queryset = EvolucaoDiaria.objects.all()
-    serializer_class = EvolucaoSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class = EvolucaoDiariaSerializer

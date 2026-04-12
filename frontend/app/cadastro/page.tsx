@@ -8,12 +8,12 @@ import axios from 'axios';
 export default function CadastroPage() {
   const router = useRouter();
 
-  // Estados para capturar tudo que o usuário digita
+  // Estados para capturar os dados
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [instituicao, setInstituicao] = useState(''); // Opcional, por enquanto visual
+  const [instituicao, setInstituicao] = useState(''); 
   const [termosAceitos, setTermosAceitos] = useState(false);
   
   // Estados de controle
@@ -24,45 +24,44 @@ export default function CadastroPage() {
     setErro('');
 
     // 1. Validações Locais
-    if (!nome || !email || !senha || !confirmarSenha) {
-      setErro("Por favor, preencha todos os campos obrigatórios.");
+    if (!nome || !email || !senha || !confirmarSenha || !instituicao) {
+      setErro("Por favor, preencha todos os campos, incluindo a instituição.");
       return;
     }
 
     if (senha !== confirmarSenha) {
-      setErro("As senhas não coincidem. Digite novamente.");
+      setErro("As senhas não coincidem.");
       return;
     }
 
     if (!termosAceitos) {
-      setErro("Você precisa aceitar os Termos de Uso para se cadastrar.");
+      setErro("Você precisa aceitar os Termos de Uso.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // 2. Envio para o Django
-      // (Nota: Estamos enviando username, email, password e first_name conforme nosso Serializer)
-      const resposta = await axios.post('http://localhost:8000/api/usuarios/registrar/', {
-        username: email, 
+      // 2. Envio para o Django (Ajustado para o seu novo backend)
+      const resposta = await axios.post('http://localhost:8000/api/register/', {
+        nome: nome,
         email: email,
         password: senha,
-        first_name: nome
+        instituicao: instituicao
       });
 
       if (resposta.status === 201) {
-        // Sucesso!
-        alert("Cadastro realizado com sucesso! Faça seu login.");
-        router.push('/'); 
+        alert("Cadastro realizado com sucesso!");
+        router.push('/'); // Redireciona para a tela de login
       }
     } catch (err: any) {
-      // 3. Tratamento de Erros do Servidor
+      // 3. Tratamento de Erros
       if (err.response && err.response.data) {
-        // O Django devolve os erros em formato de objeto JSON, transformamos em string para exibir
-        setErro(JSON.stringify(err.response.data)); 
+        // Se o erro for um objeto, pegamos a mensagem ou mostramos o erro detalhado
+        const mensagemErro = err.response.data.error || JSON.stringify(err.response.data);
+        setErro(mensagemErro);
       } else {
-        setErro('Erro de conexão. Verifique se o servidor Django está rodando na porta 8000.');
+        setErro('Não foi possível conectar ao servidor. Verifique se o Django está rodando.');
       }
     } finally {
       setLoading(false);
@@ -89,7 +88,7 @@ export default function CadastroPage() {
           Preencha seus dados institucionais para acessar o sistema.
         </p>
 
-        {/* Caixa de Erro (Só aparece se algo der errado) */}
+        {/* Caixa de Erro */}
         {erro && (
           <div className="w-full bg-red-50 text-red-600 border border-red-200 rounded-xl p-4 mb-6 text-sm font-medium text-center shadow-sm">
             {erro}
@@ -149,7 +148,7 @@ export default function CadastroPage() {
             </div>
 
             {/* Instituição de Ensino */}
-            <div className="bg-white rounded-2xl flex items-center px-4 py-3.5 shadow-sm md:col-span-1 focus-within:ring-2 focus-within:ring-slate-400 transition-all">
+            <div className="bg-white rounded-2xl flex items-center px-4 py-3.5 shadow-sm focus-within:ring-2 focus-within:ring-slate-400 transition-all">
               <span className="text-gray-400 text-lg mr-3">🏢</span>
               <input 
                 type="text" 
@@ -161,15 +160,15 @@ export default function CadastroPage() {
             </div>
 
             {/* Termos de Uso */}
-            <div className="flex items-center gap-3 px-2 md:col-span-1">
+            <div className="flex items-center gap-3 px-2">
               <input 
                 type="checkbox" 
                 checked={termosAceitos}
                 onChange={(e) => setTermosAceitos(e.target.checked)}
                 className="w-6 h-6 rounded border-gray-300 accent-slate-800 cursor-pointer shrink-0" 
               />
-              <label className="text-sm text-gray-700 leading-tight cursor-pointer" onClick={() => setTermosAceitos(!termosAceitos)}>
-                Eu concordo com os Termos de Uso e Política de Privacidade
+              <label className="text-sm text-gray-700 leading-tight cursor-pointer">
+                Eu concordo com os Termos de Uso
               </label>
             </div>
 
@@ -189,7 +188,6 @@ export default function CadastroPage() {
             </button>
           </div>
 
-          {/* Link para Login */}
           <p className="mt-2 text-sm text-gray-600 text-center">
             Já tem uma conta?{' '}
             <Link href="/" className="text-slate-800 font-bold hover:underline">
