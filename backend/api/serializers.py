@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Professor, Aluno, PEI, LaudoMedico, EvolucaoDiaria
+from .models import Professor, Aluno, PEI, LaudoMedico, EvolucaoDiaria, ProtocoloCrise
 from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,17 +13,16 @@ class ProfessorSerializer(serializers.ModelSerializer):
         model = Professor
         fields = ['id', 'user', 'instituicao', 'especialidade']
 
-class AlunoSerializer(serializers.ModelSerializer):
+# Movendo os Serializers de apoio para cima para o AlunoSerializer poder usá-los
+class ProtocoloCriseSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Aluno
+        model = ProtocoloCrise
         fields = '__all__'
-        read_only_fields = ['professor']
 
 class LaudoMedicoSerializer(serializers.ModelSerializer):
     class Meta:
         model = LaudoMedico
         fields = '__all__'
-        
 
 class PEISerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,3 +33,16 @@ class EvolucaoDiariaSerializer(serializers.ModelSerializer):
     class Meta:
         model = EvolucaoDiaria
         fields = '__all__'
+
+class AlunoSerializer(serializers.ModelSerializer):
+    sugestao_manejo = serializers.ReadOnlyField() 
+    
+    # ADIÇÕES: Isso faz a mágica de trazer os dados relacionados no "Exibir Plano"
+    peis = PEISerializer(many=True, read_only=True) 
+    laudo = LaudoMedicoSerializer(read_only=True)
+    protocolo_detalhado = ProtocoloCriseSerializer(source='protocolo_crise', read_only=True)
+
+    class Meta:
+        model = Aluno
+        fields = '__all__'
+        read_only_fields = ['professor']

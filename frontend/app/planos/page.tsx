@@ -1,57 +1,36 @@
-
 'use client';
 
-import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import Link from "next/link";
 
-export default function CriacaoPlanoPage() {
+export default function CriarPlanoPage() {
   const router = useRouter();
-
-  // 1. Estados capturando os dados exatamente como o usuário digita
-  const [nome, setNome] = useState('');
-  const [diagnostico, setDiagnostico] = useState('');
-  const [observacoes, setObservacoes] = useState('');
-  const [suporte, setSuporte] = useState('');
-  const [autorizado, setAutorizado] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  const [form, setForm] = useState({
+    nome: '',
+    diagnostico: '',
+    comunicacao: 50,
+    humor: 50,
+    social: 50,
+    motor: 50
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!autorizado) {
-      alert("Por favor, confirme a autorização dos dados.");
-      return;
-    }
-
     setLoading(true);
     const token = localStorage.getItem('spectra_token');
 
     try {
-      // 2. ENVIANDO OS DADOS - AJUSTADO PARA O SEU MODELS.PY
-      await axios.post('http://localhost:8000/api/alunos/', {
-        nome: nome, // Mudei de nome_completo para 'nome' para bater com seu Model
-        diagnostico: diagnostico,
-        data_nascimento: "2015-01-01", // Campo obrigatório no seu Model (estou enviando um padrão)
-        matricula: "MAT-" + Math.floor(Math.random() * 10000), // Gerando uma matrícula temporária
-        
-        // Se você adicionou os campos de progresso no Model como sugerido:
-        comunicacao: 50,
-        humor: 50,
-        social: 50,
-        motor: 50
-      }, {
+      await axios.post('http://localhost:8000/api/alunos/', form, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
-      alert("Plano gerado e salvo com sucesso!");
-      router.push('/planos-ativos'); // Te joga direto para a lista
-      
-    } catch (err: any) {
-      console.error("ERRO DO DJANGO:", err.response?.data);
-      alert("Erro ao salvar. Verifique se o servidor Django está rodando.");
+      router.push('/planos-ativos');
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao criar plano. Verifique a conexão.");
     } finally {
       setLoading(false);
     }
@@ -60,23 +39,25 @@ export default function CriacaoPlanoPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex flex-col items-center">
       
-      {/* Cabeçalho (Header) Padronizado */}
+      {/* Cabeçalho Padronizado (Igual ao Planos Ativos) */}
       <header className="w-full bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50 mb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex-shrink-0 flex items-center">
               <Link href="/home" className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-700 to-slate-900 hover:opacity-80 transition-opacity">
+                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-700 to-slate-900">
                   🧠 SPECTRA
                 </span>
               </Link>
             </div>
             <nav className="hidden md:flex space-x-8">
-              <Link href="/home" className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 px-3 py-2 rounded-md text-base font-medium transition-all">Início</Link>
-              <Link href="/sobre" className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 px-3 py-2 rounded-md text-base font-medium transition-all">Sobre</Link>
+              <Link href="/home" className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md font-medium transition-all">Início</Link>
+              <Link href="/cadastrar-aluno" className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md font-medium transition-all">Cadastrar</Link>
+              <Link href="/planos-ativos" className="text-indigo-600 bg-indigo-50 px-3 py-2 rounded-md font-medium transition-all">Planos</Link>
+              <Link href="/sobre" className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md font-medium transition-all">Sobre</Link>
             </nav>
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 shadow-sm bg-slate-100 flex items-center justify-center text-slate-600 font-medium text-sm">PM</div>
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center border text-slate-600 font-medium italic">PM</div>
               <span className="hidden md:block text-slate-700 font-medium text-base">Prof. Marcos</span>
             </div>
           </div>
@@ -84,84 +65,93 @@ export default function CriacaoPlanoPage() {
       </header>
 
       {/* Container Principal */}
-      <main className="w-full max-w-4xl px-4 pb-12">
-        <div className="bg-white w-full rounded-[32px] px-8 py-12 flex flex-col items-center shadow-sm border border-slate-200">
+      <main className="w-full max-w-5xl px-4 pb-12">
+        <div className="bg-white w-full rounded-[32px] px-8 py-10 flex flex-col shadow-sm border border-slate-200">
           
-          <h1 className="text-3xl font-semibold text-slate-800 mb-3 text-center tracking-tight">
-            Criação de Plano
-          </h1>
-          <p className="text-base text-slate-600 mb-10 text-center max-w-2xl">
-            Informe as necessidades do aluno para receber um guia e plano de ensino personalizado.
-          </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <h1 className="text-3xl font-semibold text-slate-800 tracking-tight">Criar Novo Plano</h1>
+            <p className="text-slate-500 text-sm font-medium italic">Preencha os dados para gerar o protocolo SOS automático</p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="w-full max-w-2xl flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="space-y-10">
             
-            {/* Nome do Aluno */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 py-3.5 focus-within:border-indigo-500 focus-within:ring-1 transition-all shadow-sm">
-              <span className="text-slate-400 text-xl mr-4">👤</span>
-              <input 
-                type="text" required placeholder="Nome Completo do Aluno" 
-                className="w-full bg-transparent outline-none text-slate-700 text-sm font-medium" 
-                value={nome} onChange={(e) => setNome(e.target.value)}
-              />
-            </div>
-
-            {/* Necessidades Específicas */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 py-3.5 focus-within:border-indigo-500 transition-all shadow-sm">
-              <span className="text-slate-400 text-xl mr-4">👁️</span>
-              <input 
-                type="text" placeholder="Necessidades Específicas (ex: Autismo, TDAH...)" 
-                className="w-full bg-transparent outline-none text-slate-700 text-sm font-medium" 
-                value={diagnostico} onChange={(e) => setDiagnostico(e.target.value)}
-              />
-            </div>
-
-            {/* Observações */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 py-3.5 focus-within:border-indigo-500 transition-all shadow-sm">
-              <span className="text-slate-400 text-xl mr-4">📈</span>
-              <input 
-                type="text" placeholder="Observações de Comportamento e Aprendizagem" 
-                className="w-full bg-transparent outline-none text-slate-700 text-sm font-medium" 
-                value={observacoes} onChange={(e) => setObservacoes(e.target.value)}
-              />
-            </div>
-
-            {/* Nível de Suporte */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 py-3.5 focus-within:border-indigo-500 transition-all shadow-sm">
-              <span className="text-slate-400 text-xl mr-4">✔️</span>
-              <select 
-                required className="w-full bg-transparent outline-none text-slate-700 text-sm font-medium cursor-pointer"
-                value={suporte} onChange={(e) => setSuporte(e.target.value)}
-              >
-                <option value="" disabled hidden>Nível de Suporte Necessário</option>
-                <option value="1">Nível 1 - Suporte Leve</option>
-                <option value="2">Nível 2 - Suporte Moderado</option>
-                <option value="3">Nível 3 - Suporte Substancial</option>
-              </select>
-            </div>
-
-            {/* Autorização */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 py-4 shadow-sm">
-              <span className="text-slate-400 text-xl mr-4">🛡️</span>
-              <div className="flex items-center gap-3 w-full">
+            {/* Campos de Texto */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="flex flex-col gap-2">
+                <label className="text-slate-700 font-semibold text-sm ml-1">Nome do Aluno</label>
                 <input 
-                  type="checkbox" checked={autorizado} onChange={(e) => setAutorizado(e.target.checked)}
-                  className="w-5 h-5 rounded border-slate-300 text-indigo-600 cursor-pointer" 
+                  required
+                  type="text" 
+                  placeholder="Ex: Erick Daniel"
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-slate-700"
+                  onChange={(e) => setForm({...form, nome: e.target.value})}
                 />
-                <label className="text-slate-700 text-sm font-medium cursor-pointer">
-                  Confirmo a Autorização e o Consentimento dos dados informados
-                </label>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-slate-700 font-semibold text-sm ml-1">Diagnóstico Principal</label>
+                <select 
+                  required
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 transition-all text-slate-700 appearance-none cursor-pointer"
+                  onChange={(e) => setForm({...form, diagnostico: e.target.value})}
+                >
+                  <option value="">Selecione um diagnóstico...</option>
+                  <option value="Autismo (TEA)">Autismo (TEA)</option>
+                  <option value="TDAH">TDAH</option>
+                  <option value="Autismo e TDAH">Autismo e TDAH</option>
+                  <option value="Deficiência Intelectual">Deficiência Intelectual</option>
+                  <option value="Geral">Geral / Outros</option>
+                </select>
               </div>
             </div>
 
-            <div className="flex justify-center mt-6">
-              <button
-                type="submit"
+            {/* Sliders com as cores do gráfico original */}
+            <div className="space-y-6">
+              <h3 className="text-slate-800 font-semibold text-lg flex items-center gap-2">
+                <span className="w-1.5 h-5 bg-indigo-600 rounded-full"></span>
+                Níveis de Desenvolvimento Iniciais
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 bg-slate-50/50 p-8 rounded-[24px] border border-slate-100">
+                {[
+                  { id: 'comunicacao', label: 'Comunicação', color: 'accent-indigo-500' },
+                  { id: 'humor', label: 'Humor', color: 'accent-teal-400' },
+                  { id: 'social', label: 'Social', color: 'accent-violet-400' },
+                  { id: 'motor', label: 'Motor', color: 'accent-amber-400' },
+                ].map((item) => (
+                  <div key={item.id} className="space-y-3">
+                    <div className="flex justify-between text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <span>{item.label}</span>
+                      <span className="text-indigo-600">{(form as any)[item.id]}%</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" max="100" 
+                      value={(form as any)[item.id]}
+                      className={`w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer ${item.color}`}
+                      onChange={(e) => setForm({...form, [item.id]: parseInt(e.target.value)})}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Botões - Cores do sistema original */}
+            <div className="flex gap-4 pt-4">
+              <button 
+                type="submit" 
                 disabled={loading}
-                className="bg-slate-800 hover:bg-slate-900 text-white font-medium text-base py-4 px-24 rounded-xl transition-all shadow-sm w-full md:w-auto min-w-[250px] disabled:opacity-50"
+                className="flex-1 py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-[0.98]"
               >
-                {loading ? "Gerando..." : "Gerar Plano"}
+                {loading ? 'Sincronizando...' : 'Gerar Plano PEI'}
               </button>
+              
+              <Link 
+                href="/planos-ativos" 
+                className="flex-1 text-center py-3.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
+              >
+                Cancelar
+              </Link>
             </div>
           </form>
         </div>
