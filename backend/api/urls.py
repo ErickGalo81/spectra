@@ -1,10 +1,15 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView # Importante para o Login
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import (
-    RegistroUsuarioView, ProfessorViewSet, AlunoViewSet, 
-    PEIViewSet, LaudoMedicoViewSet, EvolucaoViewSet
+    RegistroUsuarioView, 
+    MeView,             # 1. Adicionamos a importação da nova View
+    ProfessorViewSet, 
+    AlunoViewSet, 
+    PEIViewSet, 
+    LaudoMedicoViewSet, 
+    EvolucaoViewSet
 )
 
 # O Router cria todas as rotas CRUD automaticamente
@@ -16,14 +21,17 @@ router.register(r'laudos', LaudoMedicoViewSet, basename='laudo')
 router.register(r'evolucoes', EvolucaoViewSet, basename='evolucao')
 
 urlpatterns = [
+    # --- ROTA DE IDENTIDADE (Quem sou eu?) ---
+    # É aqui que o Next.js vai buscar o nome do professor logado
+    path('me/', MeView.as_view(), name='me'), 
+
     # --- ROTA DE CADASTRO ---
     path('register/', RegistroUsuarioView.as_view(), name='registrar_usuario'),
     
     # --- ROTAS DE LOGIN (JWT) ---
-    # É aqui que o Daniel vai enviar o email/senha para entrar no sistema
     path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
-    # --- DEMAIS ROTAS ---
+    # --- DEMAIS ROTAS (CRUD) ---
     path('', include(router.urls)),
 ]

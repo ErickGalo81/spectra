@@ -9,7 +9,7 @@ from .serializers import (
 )
 
 # ==========================================
-# 1. LOGICA DE CADASTRO (PROFESSOR)
+# 1. LÓGICA DE CADASTRO (PROFESSOR)
 # ==========================================
 class RegistroUsuarioView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -17,13 +17,15 @@ class RegistroUsuarioView(APIView):
     def post(self, request):
         data = request.data
         try:
+            # Cria o usuário base no Django
             user = User.objects.create_user(
                 username=data.get('email'), 
                 email=data.get('email'),
                 password=data.get('password'),
-                first_name=data.get('nome', '')
+                first_name=data.get('nome', '') # Salva o nome vindo do cadastro
             )
             
+            # Cria o perfil de Professor vinculado a esse usuário
             Professor.objects.create(
                 user=user,
                 instituicao=data.get('instituicao', 'Não informada'),
@@ -41,27 +43,48 @@ class RegistroUsuarioView(APIView):
             )
 
 # ==========================================
-# 2. VIEWSETS (CRUD AUTOMÁTICO)
+# 2. IDENTIDADE DO USUÁRIO LOGADO (Quem sou eu?)
 # ==========================================
+class MeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-class ProfessorViewSet(viewsets.ModelViewSet):
-    queryset = Professor.objects.all()
-    serializer_class = ProfessorSerializer
-    # Removido o perform_create daqui, pois o professor é criado no RegistroUsuarioView
+    def get(self, request):
+        user = request.user
+        try:
+            # Busca os dados extras na tabela Professor usando o related_name 'perfil'
+            professor = user.perfil 
+            cargo = professor.especialidade or "Professor"
+        except AttributeError:
+            cargo = "Administrador"
+
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "nome": user.first_name, # Enviado para o Dashboard
+            "email": user.email,
+            "cargo": cargo
+        })
+
+# ==========================================
+# 3. VIEWSETS (CRUD AUTOMÁTICO)
+# ==========================================
 
 class AlunoViewSet(viewsets.ModelViewSet):
     queryset = Aluno.objects.all()
     serializer_class = AlunoSerializer
+    permission_classes = [permissions.IsAuthenticated]
     
-    # 1. Filtra para o professor logado ver apenas os SEUS alunos
+    # Garante que o professor só veja os alunos que ele cadastrou
     def get_queryset(self):
         return Aluno.objects.filter(professor__user=self.request.user)
 
-    # 2. ESSA FUNÇÃO RESOLVE O ERRO DE INTEGRITY ERROR:
-    # Ela associa o aluno ao professor logado no momento da criação
+    # Vincula automaticamente o novo aluno ao professor logado
     def perform_create(self, serializer):
-        # self.request.user.perfil pega o objeto Professor do usuário logado
         serializer.save(professor=self.request.user.perfil)
+
+class ProfessorViewSet(viewsets.ModelViewSet):
+    queryset = Professor.objects.all()
+    serializer_class = ProfessorSerializer
 
 class LaudoMedicoViewSet(viewsets.ModelViewSet):
     queryset = LaudoMedico.objects.all()
