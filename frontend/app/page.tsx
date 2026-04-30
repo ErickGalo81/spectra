@@ -38,7 +38,7 @@ export default function LoginPage() {
 
       if (resposta.data.access) {
         // SALVANDO COM O NOME QUE A HOME PROCURA
-        localStorage.setItem('access_token', resposta.data.access);
+        localStorage.setItem('spectra_token', resposta.data.access);
         
         if (resposta.data.refresh) {
             localStorage.setItem('refresh_token', resposta.data.refresh);

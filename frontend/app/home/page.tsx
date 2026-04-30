@@ -22,7 +22,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const carregarDados = async () => {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("spectra_token");
       if (!token) {
         router.push("/");
         return;
