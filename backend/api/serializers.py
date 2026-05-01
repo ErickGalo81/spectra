@@ -45,4 +45,4 @@ class AlunoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Aluno
         fields = '__all__'
-        read_only_fields = ['professor']
+        # Removido read_only_fields = ['professor'] porque o campo foi tirado do models.py

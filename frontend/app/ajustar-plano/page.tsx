@@ -1,21 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 
 export default function AjustarPlanoPage() {
   const router = useRouter();
   const params = useParams();
   
-  // Estados para o Perfil e Dados do Banco
-  const [usuario, setUsuario] = useState({ nome: "Carregando...", cargo: "" });
-  const [loading, setLoading] = useState(true);
+  // Se você usa a rota como /ajustar-plano/[id], pegamos o ID assim:
+  const id = params?.id; 
 
-  // 1. Carregar Identidade do Professor (Sincronizado com o seu Postgres)
+  const [alunoNome, setAlunoNome] = useState("Carregando...");
+  const [alunoMatricula, setAlunoMatricula] = useState("...");
+  
+  // Estados dos Sliders
+  const [comunicacao, setComunicacao] = useState(50);
+  const [social, setSocial] = useState(50);
+  const [humor, setHumor] = useState(50);
+  const [motor, setMotor] = useState(50);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Carrega os dados do PEI existente
   useEffect(() => {
-    const carregarPerfil = async () => {
+    const carregarPlano = async () => {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) {
@@ -23,142 +34,179 @@ export default function AjustarPlanoPage() {
           return;
         }
 
-        const res = await axios.get("http://localhost:8000/api/me/", {
+        // Busca o PEI específico no backend
+        const res = await axios.get(`http://localhost:8000/api/peis/${id}/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        
+        const plano = res.data;
+        
+        setComunicacao(plano.comunicacao);
+        setSocial(plano.social);
+        setHumor(plano.humor);
+        setMotor(plano.motor);
 
-        const nomeReal = res.data.nome || res.data.username;
-        setUsuario({ nome: nomeReal, cargo: res.data.cargo });
+        // Como o PEI retorna apenas o ID do aluno, precisamos buscar o nome e matrícula (opcional, mas recomendado)
+        const resAluno = await axios.get(`http://localhost:8000/api/alunos/${plano.aluno}/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        setAlunoNome(resAluno.data.nome);
+        setAlunoMatricula(resAluno.data.matricula);
+
       } catch (error) {
-        console.error("Erro ao carregar perfil:", error);
+        console.error("Erro ao carregar o plano:", error);
       } finally {
         setLoading(false);
       }
     };
-    carregarPerfil();
-  }, [router]);
 
-  // Iniciais dinâmicas (Ex: Erick Pereira -> EP)
-  const iniciais = usuario.nome !== "Carregando..." 
-    ? usuario.nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) 
-    : "??";
+    if (id) carregarPlano();
+  }, [id, router]);
+
+  // ==========================================
+  // SALVAR AJUSTES (PUT)
+  // ==========================================
+  const handleConfirmarAjustes = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      
+      const payload = {
+        comunicacao,
+        social,
+        humor,
+        motor
+      };
+
+      // Usamos PATCH ou PUT para atualizar o plano
+      await axios.patch(`http://localhost:8000/api/peis/${id}/`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      alert("Plano atualizado com sucesso!");
+      router.push("/planos-ativos"); 
+    } catch (error) {
+      console.error("Erro ao atualizar o plano:", error);
+      alert("Erro ao salvar ajustes.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ==========================================
+  // EXCLUIR PLANO (DELETE)
+  // ==========================================
+  const handleExcluirPlano = async () => {
+    const confirmacao = window.confirm(
+      "⚠️ TEM CERTEZA?\n\nVocê está prestes a excluir este plano (PEI). O aluno não será excluído, apenas este plano. Esta ação não pode ser desfeita."
+    );
+
+    if (confirmacao) {
+      try {
+        const token = localStorage.getItem("access_token");
+        await axios.delete(`http://localhost:8000/api/peis/${id}/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        alert("Plano excluído com sucesso!");
+        router.push("/planos-ativos");
+      } catch (error) {
+        console.error("Erro ao excluir o plano:", error);
+        alert("Erro ao excluir o plano. Tente novamente.");
+      }
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Carregando plano...</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex flex-col items-center pb-12">
+    <div className="min-h-screen bg-slate-50 font-sans flex flex-col items-center py-12">
       
-      {/* Cabeçalho (Header) Dinâmico */}
-      <header className="w-full bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50 mb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex-shrink-0 flex items-center">
-              <Link href="/home" className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-700 to-slate-900">
-                  🧠 SPECTRA
-                </span>
-              </Link>
-            </div>
-
-            <nav className="hidden md:flex space-x-8">
-              <Link href="/home" className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md font-medium">Início</Link>
-              <Link href="/cadastrar-aluno" className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md font-medium">Cadastrar</Link>
-              <Link href="/planos-ativos" className="text-indigo-600 bg-indigo-50 px-3 py-2 rounded-md font-medium">Planos</Link>
-            </nav>
-
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full border border-slate-200 bg-indigo-50 flex items-center justify-center text-indigo-700 font-bold text-sm shadow-sm">
-                {iniciais}
-              </div>
-              <div className="hidden md:flex flex-col text-left">
-                <span className="text-slate-700 font-semibold text-sm leading-none">{usuario.nome}</span>
-                <span className="text-slate-400 text-[10px] font-medium uppercase mt-1">{usuario.cargo}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Container Principal */}
-      <main className="w-full max-w-4xl px-4">
-        <div className="bg-white w-full rounded-[32px] px-8 py-10 flex flex-col shadow-sm border border-slate-200 relative">
+      <main className="w-full max-w-2xl px-4">
+        <div className="bg-white w-full rounded-[32px] p-8 shadow-sm border border-slate-200">
           
-          {/* BOTÃO DE VOLTAR (Igual ao da SobrePage) */}
-          <button 
-            onClick={() => router.push('/planos-ativos')}
-            className="absolute left-8 top-8 flex items-center gap-2 text-slate-400 hover:text-indigo-600 transition-colors group"
-          >
-            <span className="text-xl group-hover:-translate-x-1 transition-transform">←</span>
-            <span className="text-sm font-bold uppercase tracking-wider">Voltar</span>
-          </button>
-
-          <h1 className="text-3xl font-semibold text-slate-800 tracking-tight text-center mb-8 mt-6">
-            Ajustar Plano
-          </h1>
-
-          {/* Cabeçalho do Aluno (Exemplo Estático, pronto para virar dinâmico) */}
-          <div className="flex items-center gap-5 mb-8 pb-8 border-b border-slate-100">
-            <div className="w-20 h-20 rounded-full bg-slate-50 border border-slate-200 shadow-sm flex items-center justify-center text-4xl shrink-0">
-              👦🏻
+          {/* CABEÇALHO COM AVATAR E NOME */}
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-3xl border border-slate-200">
+              👦🏼
             </div>
             <div>
-              <h2 className="text-slate-800 font-bold text-2xl mb-2">Lucas Almeida</h2>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-md text-xs font-bold uppercase">TDAH</span>
-                <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-md text-xs font-bold uppercase">Autismo</span>
+              <div className="bg-indigo-50/50 border border-indigo-100 text-slate-800 font-bold text-xl px-4 py-2 rounded-xl mb-1 inline-block">
+                {alunoNome}
               </div>
+              <p className="text-xs font-bold text-slate-400 tracking-wider uppercase ml-1">
+                Matrícula: {alunoMatricula}
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {/* 1. Laudos */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col h-full">
-              <h3 className="text-slate-800 font-bold text-lg mb-4 flex items-center gap-2">
-                <span className="text-indigo-600">1.</span> Laudos Médicos
-              </h3>
-              <div className="space-y-3 mb-6 flex-grow">
-                <div className="flex justify-between items-center bg-white border border-slate-200 p-3 rounded-xl shadow-sm">
-                  <span className="text-sm text-slate-600 font-medium">📄 laudo_neurologico.pdf</span>
-                  <button className="text-slate-400 hover:text-red-500">✕</button>
-                </div>
+          {/* SLIDERS */}
+          <div className="flex flex-col gap-8 mb-12">
+            
+            {/* Comunicação */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 tracking-wider">COMUNICAÇÃO</span>
+                <span className="text-xs font-bold text-indigo-600">{comunicacao}%</span>
               </div>
-              <button className="w-full py-3 bg-white border border-dashed border-slate-300 hover:border-indigo-400 text-indigo-600 font-medium rounded-xl transition-all">
-                + Anexar documento
-              </button>
+              <input type="range" min="0" max="100" value={comunicacao} onChange={(e) => setComunicacao(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
             </div>
 
-            {/* 2. Metas */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col h-full">
-              <h3 className="text-slate-800 font-bold text-lg mb-4 flex items-center gap-2">
-                <span className="text-indigo-600">2.</span> Metas Principais
-              </h3>
-              <div className="space-y-3 mb-4 flex-grow">
-                <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-sm">
-                  <p className="text-slate-700 text-sm font-medium outline-none" contentEditable suppressContentEditableWarning>
-                    Melhorar a regulação emocional nas transições.
-                  </p>
-                </div>
+            {/* Socialização */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 tracking-wider">SOCIALIZAÇÃO</span>
+                <span className="text-xs font-bold text-indigo-600">{social}%</span>
               </div>
-              <input type="text" className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm outline-none" placeholder="Adicionar nova meta..." />
+              <input type="range" min="0" max="100" value={social} onChange={(e) => setSocial(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
             </div>
+
+            {/* Humor */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 tracking-wider">HUMOR</span>
+                <span className="text-xs font-bold text-indigo-600">{humor}%</span>
+              </div>
+              <input type="range" min="0" max="100" value={humor} onChange={(e) => setHumor(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
+            </div>
+
+            {/* Motor */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-700 tracking-wider">MOTOR</span>
+                <span className="text-xs font-bold text-indigo-600">{motor}%</span>
+              </div>
+              <input type="range" min="0" max="100" value={motor} onChange={(e) => setMotor(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
+            </div>
+
           </div>
 
-          {/* 3. Estratégias */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-8 shadow-sm">
-            <h3 className="text-slate-800 font-bold text-lg mb-4 flex items-center gap-2">
-              <span className="text-indigo-600">3.</span> Estratégias e Manejo
-            </h3>
-            <textarea 
-              className="w-full h-32 bg-white border border-slate-300 rounded-xl p-4 text-sm font-medium text-slate-700 outline-none"
-              defaultValue="Cronograma visual colado na carteira. Antecipação verbal de 5 min antes de mudanças."
-            />
-          </div>
-
-          {/* Botões de Ação */}
-          <div className="flex flex-col sm:flex-row gap-4 border-t border-slate-100 pt-8">
-            <button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-100 transition-all">
-              Salvar Alterações
+          {/* BOTÕES DE AÇÃO */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleConfirmarAjustes}
+              disabled={saving}
+              className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm py-4 rounded-xl transition-all active:scale-[0.98]"
+            >
+              {saving ? 'Salvando...' : 'Confirmar Ajustes'}
             </button>
-            <button onClick={() => router.back()} className="flex-1 bg-white border-2 border-slate-200 text-slate-700 font-bold py-4 rounded-xl hover:bg-slate-50 transition-all">
-              Cancelar
+
+            <button
+              onClick={() => router.back()}
+              className="px-6 py-4 border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-50 transition-all"
+            >
+              Sair
+            </button>
+            
+            {/* NOVO BOTÃO: EXCLUIR PLANO */}
+            <button
+              onClick={handleExcluirPlano}
+              title="Excluir este plano"
+              className="px-5 py-4 border border-red-200 text-red-500 font-bold text-lg rounded-xl hover:bg-red-50 hover:text-red-600 transition-all flex items-center justify-center"
+            >
+              🗑️
             </button>
           </div>
 

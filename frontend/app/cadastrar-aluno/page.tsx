@@ -8,17 +8,19 @@ import axios from "axios";
 export default function CadastrarAlunoPage() {
   const router = useRouter();
 
-  // Estados para o formulário (Ajustados para o seu Model Aluno)
+  // Estados para o formulário
   const [nome, setNome] = useState("");
-  const [matricula, setMatricula] = useState(""); // Usando o campo de escola como matrícula
+  const [dataNascimento, setDataNascimento] = useState(""); 
   const [diagnostico, setDiagnostico] = useState("");
+  const [sufixoAleatorio, setSufixoAleatorio] = useState(""); // <-- NOVO: Guarda o número único
   
-  // Dados do Professor para o cabeçalho
   const [usuario, setUsuario] = useState({ nome: "Carregando...", cargo: "" });
   const [loading, setLoading] = useState(false);
 
-  // 1. Carregar nome do professor logado (Igual na Home)
   useEffect(() => {
+    // Gera um sufixo de 3 números (ex: 492) assim que a tela carrega
+    setSufixoAleatorio(Math.floor(100 + Math.random() * 900).toString());
+
     const carregarPerfil = async () => {
       try {
         const token = localStorage.getItem("access_token");
@@ -40,7 +42,31 @@ export default function CadastrarAlunoPage() {
     carregarPerfil();
   }, [router]);
 
-  // 2. Função para salvar o aluno no PostgreSQL via Axios
+  // Aplica a máscara DD/MM/AAAA
+  const handleDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 8) value = value.slice(0, 8);
+
+    if (value.length >= 5) {
+      value = value.replace(/(\d{2})(\d{2})(\d{1,4})/, "$1/$2/$3");
+    } else if (value.length >= 3) {
+      value = value.replace(/(\d{2})(\d{1,2})/, "$1/$2");
+    }
+    setDataNascimento(value);
+  };
+
+  // 🧠 LÓGICA DA MATRÍCULA AUTOMÁTICA (Agora com o sufixo único)
+  let matriculaGerada = "";
+  if (nome && dataNascimento.length === 10) {
+    const ano = dataNascimento.split("/")[2]; // Pega o ano de nascimento
+    const hoje = new Date();
+    const diaMes = String(hoje.getDate()).padStart(2, '0') + String(hoje.getMonth() + 1).padStart(2, '0'); // DDMM de hoje
+    const inicial = nome.charAt(0).toUpperCase(); // Primeira letra do nome
+    
+    // Adiciona o sufixo no final para garantir exclusividade!
+    matriculaGerada = `${ano}${diaMes}${inicial}-${sufixoAleatorio}`; 
+  }
+
   const handleCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -48,11 +74,17 @@ export default function CadastrarAlunoPage() {
     try {
       const token = localStorage.getItem("access_token");
       
+      let dataFormatadaParaBanco = null;
+      if (dataNascimento.length === 10) {
+        const [dia, mes, ano] = dataNascimento.split("/");
+        dataFormatadaParaBanco = `${ano}-${mes}-${dia}`;
+      }
+      
       const payload = {
         nome: nome,
-        matricula: matricula,
+        data_nascimento: dataFormatadaParaBanco,
+        matricula: matriculaGerada, 
         diagnostico: diagnostico || "Pendente",
-        // Os campos comunicacao, humor, etc., o Django já inicia com 50
       };
 
       const res = await axios.post("http://localhost:8000/api/alunos/", payload, {
@@ -63,7 +95,7 @@ export default function CadastrarAlunoPage() {
       });
 
       if (res.status === 201) {
-        alert("Aluno cadastrado com sucesso no banco de dados!");
+        alert("Aluno cadastrado com sucesso!");
         router.push("/home");
       }
     } catch (error: any) {
@@ -79,7 +111,6 @@ export default function CadastrarAlunoPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex flex-col items-center">
       
-      {/* Cabeçalho Dinâmico */}
       <header className="w-full bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50 mb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
@@ -118,41 +149,59 @@ export default function CadastrarAlunoPage() {
 
           <form onSubmit={handleCadastro} className="w-full max-w-md flex flex-col gap-5">
             
-            {/* Nome do Aluno */}
+            {/* Nome */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 py-3.5 focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
-              <span className="text-slate-400 mr-3">👤</span>
+              <span className="text-slate-400 mr-3 text-lg">👤</span>
               <input 
                 required
                 type="text" 
                 placeholder="Nome Completo do Aluno" 
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                className="w-full bg-transparent outline-none text-slate-700 text-sm" 
+                className="w-full bg-transparent outline-none text-slate-700 text-sm placeholder:text-slate-400" 
               />
             </div>
 
-            {/* Escola / Matrícula */}
+            {/* Data de Nascimento */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 py-3.5 focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
-              <span className="text-slate-400 mr-3">🏫</span>
+              <span className="text-slate-400 mr-3 text-lg">📅</span>
               <input 
                 required
                 type="text" 
-                placeholder="Matrícula ou Escola" 
-                value={matricula}
-                onChange={(e) => setMatricula(e.target.value)}
-                className="w-full bg-transparent outline-none text-slate-700 text-sm" 
+                placeholder="Data de Nascimento (DD/MM/AAAA)" 
+                value={dataNascimento}
+                onChange={handleDataChange}
+                maxLength={10}
+                className="w-full bg-transparent outline-none text-slate-700 text-sm placeholder:text-slate-400" 
               />
+            </div>
+
+            {/* Matrícula Automática */}
+            <div className="bg-slate-100/70 border border-slate-200 rounded-xl flex items-center px-4 py-3.5 transition-all">
+              <span className="text-slate-400 mr-3 text-lg">🏷️</span>
+              <div className="w-full flex justify-between items-center gap-2">
+                <input 
+                  readOnly
+                  type="text" 
+                  placeholder="A matrícula será gerada aqui..." 
+                  value={matriculaGerada}
+                  className="w-full bg-transparent outline-none text-slate-600 font-mono text-sm placeholder:text-slate-400 cursor-not-allowed" 
+                />
+                <span className="text-[10px] bg-slate-200 text-slate-500 px-2.5 py-1 rounded-md font-bold tracking-wider">
+                  AUTO
+                </span>
+              </div>
             </div>
 
             {/* Diagnóstico */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl flex items-center px-4 py-3.5 focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
-              <span className="text-slate-400 mr-3">📋</span>
+              <span className="text-slate-400 mr-3 text-lg">📋</span>
               <input 
                 type="text" 
                 placeholder="Diagnóstico Principal (Ex: TEA, TDAH)" 
                 value={diagnostico}
                 onChange={(e) => setDiagnostico(e.target.value)}
-                className="w-full bg-transparent outline-none text-slate-700 text-sm" 
+                className="w-full bg-transparent outline-none text-slate-700 text-sm placeholder:text-slate-400" 
               />
             </div>
 

@@ -9,22 +9,17 @@ class Professor(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - {self.instituicao}"
 
+
 class Aluno(models.Model):
-    professor = models.ForeignKey(Professor, on_delete=models.CASCADE, related_name='alunos')
+    # O aluno não pertence a um professor específico. Ele é global na instituição.
     nome = models.CharField(max_length=255)
     data_nascimento = models.DateField(null=True, blank=True) 
     matricula = models.CharField(max_length=50, unique=True, blank=True, null=True)
-    
     diagnostico = models.CharField(max_length=255, blank=True, null=True)
-    comunicacao = models.IntegerField(default=50)
-    humor = models.IntegerField(default=50)
-    social = models.IntegerField(default=50)
-    motor = models.IntegerField(default=50)
 
     def __str__(self):
         return self.nome
 
-    # --- LÓGICA EVOLUÍDA: Protocolos em Passos e Auxílio de Aprendizagem ---
     @property
     def sugestao_manejo(self):
         diag = self.diagnostico.upper() if self.diagnostico else ""
@@ -64,7 +59,6 @@ class Aluno(models.Model):
                 ]
             }
         
-        # Protocolo padrão caso o diagnóstico não seja específico
         return {
             "tipo": "Geral",
             "gatilhos": "Observar mudanças bruscas no comportamento ou ambiente.",
@@ -81,6 +75,7 @@ class Aluno(models.Model):
             ]
         }
 
+
 class ProtocoloCrise(models.Model):
     aluno = models.OneToOneField(Aluno, on_delete=models.CASCADE, related_name='protocolo_crise')
     gatilhos_especificos = models.TextField()
@@ -92,6 +87,7 @@ class ProtocoloCrise(models.Model):
     def __str__(self):
         return f"Protocolo Personalizado: {self.aluno.nome}"
 
+
 class LaudoMedico(models.Model):
     aluno = models.OneToOneField(Aluno, on_delete=models.CASCADE, related_name='laudo')
     diagnostico = models.TextField()
@@ -102,14 +98,33 @@ class LaudoMedico(models.Model):
     def __str__(self):
         return f"Laudo de {self.aluno.nome}"
 
+
 class PEI(models.Model):
+    # O PEI é o que conecta o Aluno ao Professor naquele momento específico
     aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='peis')
+    professor_responsavel = models.ForeignKey(Professor, on_delete=models.SET_NULL, null=True)
+    
+    # NOVOS CAMPOS ADICIONADOS PARA CORRIGIR OS BUGS
+    nome_plano = models.CharField(max_length=255, blank=True, null=True)
+    protocolo_crise = models.JSONField(default=list, blank=True, null=True)
+    
     data_criacao = models.DateTimeField(auto_now_add=True)
-    objetivos = models.TextField()
-    metodologia = models.TextField()
+    
+    # Níveis de avaliação (movidos do aluno para cá)
+    comunicacao = models.IntegerField(default=50)
+    humor = models.IntegerField(default=50)
+    social = models.IntegerField(default=50)
+    motor = models.IntegerField(default=50)
+    
+    objetivos = models.TextField(blank=True, null=True)
+    metodologia = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"PEI de {self.aluno.nome}"
+        # Mostra o nome do plano se existir, senão mostra o padrão
+        if self.nome_plano:
+            return f"{self.nome_plano} ({self.aluno.nome})"
+        return f"PEI de {self.aluno.nome} - {self.data_criacao.strftime('%d/%m/%Y')}"
+
 
 class EvolucaoDiaria(models.Model):
     aluno = models.ForeignKey(Aluno, on_delete=models.CASCADE, related_name='evolucoes')

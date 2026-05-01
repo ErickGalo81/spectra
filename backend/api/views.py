@@ -74,13 +74,9 @@ class AlunoViewSet(viewsets.ModelViewSet):
     serializer_class = AlunoSerializer
     permission_classes = [permissions.IsAuthenticated]
     
-    # Garante que o professor só veja os alunos que ele cadastrou
-    def get_queryset(self):
-        return Aluno.objects.filter(professor__user=self.request.user)
-
-    # Vincula automaticamente o novo aluno ao professor logado
-    def perform_create(self, serializer):
-        serializer.save(professor=self.request.user.perfil)
+    # Removidos get_queryset e perform_create: 
+    # Agora o aluno não tem mais vínculo obrigatório com um professor, 
+    # ele é global e o ModelViewSet já cuida de tudo!
 
 class ProfessorViewSet(viewsets.ModelViewSet):
     queryset = Professor.objects.all()
