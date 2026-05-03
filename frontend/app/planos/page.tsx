@@ -27,7 +27,7 @@ export default function PlanosAtivosPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = localStorage.getItem("spectra_token");
         const resUser = await axios.get("http://localhost:8000/api/me/", { headers: { Authorization: `Bearer ${token}` } });
         setUsuario({ 
           nome: resUser.data.nome || resUser.data.username, 
@@ -54,7 +54,7 @@ export default function PlanosAtivosPage() {
   const handleSalvarPlano = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("spectra_token");
       const payload = {
         aluno: alunoSelecionadoId,
         nome_plano: nomePlano,

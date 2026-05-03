@@ -72,7 +72,7 @@ export default function CadastrarAlunoPage() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("spectra_token");
       
       let dataFormatadaParaBanco = null;
       if (dataNascimento.length === 10) {
