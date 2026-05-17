@@ -13,7 +13,9 @@ export default function SobrePage() {
   useEffect(() => {
     const carregarPerfil = async () => {
       try {
-        const token = localStorage.getItem("access_token");
+        // 🌟 CORREÇÃO AQUI: Mudamos de "access_token" para "spectra_token"
+        const token = localStorage.getItem("spectra_token");
+        
         if (!token) {
           setUsuario({ nome: "Visitante", cargo: "Acesso Limitado" });
           return;
@@ -24,17 +26,18 @@ export default function SobrePage() {
         });
 
         const nomeReal = res.data.nome || res.data.username;
-        setUsuario({ nome: nomeReal, cargo: res.data.cargo });
+        setUsuario({ nome: nomeReal, cargo: res.data.cargo || "Professor" });
       } catch (error) {
         console.error("Erro ao carregar perfil:", error);
+        setUsuario({ nome: "Visitante", cargo: "Acesso Limitado" });
       }
     };
     carregarPerfil();
   }, []);
 
-  const iniciais = usuario.nome !== "Carregando..." 
+  const iniciais = usuario.nome !== "Carregando..." && usuario.nome !== "Visitante"
     ? usuario.nome.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) 
-    : "??";
+    : "V";
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex flex-col items-center pb-12">
