@@ -30,7 +30,7 @@ export default function AjustarPlanoPage() {
   
   // Estados de Notificação e Modal
   const [notificacao, setNotificacao] = useState({ texto: "", tipo: "" });
-  const [mostrarModalExclusao, setMostrarModalExclusao] = useState(false); // 🌟 NOVO: Controla o modal de exclusão
+  const [mostrarModalExclusao, setMostrarModalExclusao] = useState(false);
 
   useEffect(() => {
     const carregarTudo = async () => {
@@ -84,6 +84,12 @@ export default function AjustarPlanoPage() {
     setProtocolos(novos);
   };
 
+  // 🌟 NOVA FUNÇÃO: Remover passo individual do protocolo
+  const removerPasso = (index: number) => {
+    const novos = protocolos.filter((_, i) => i !== index);
+    setProtocolos(novos);
+  };
+
   const handleConfirmarAjustes = async () => {
     setSaving(true);
     setNotificacao({ texto: "", tipo: "" }); 
@@ -118,9 +124,8 @@ export default function AjustarPlanoPage() {
     }
   };
 
-  // 🌟 NOVA FUNÇÃO: Executa a exclusão após confirmar no Modal
   const executarExclusao = async () => {
-    setMostrarModalExclusao(false); // Fecha o modal
+    setMostrarModalExclusao(false);
     setNotificacao({ texto: "", tipo: "" });
     try {
       const token = localStorage.getItem("spectra_token");
@@ -143,7 +148,7 @@ export default function AjustarPlanoPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex flex-col items-center relative">
       
-      {/* 🌟 NOVO: MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
       {mostrarModalExclusao && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl transform transition-all animate-in zoom-in-95 duration-200 border border-slate-200">
@@ -205,7 +210,7 @@ export default function AjustarPlanoPage() {
             <p className="text-slate-600 text-sm font-medium">Personalize as diretrizes deste prontuário</p>
           </div>
 
-          {/* 🌟 BLOCO DE NOTIFICAÇÃO DA INTERFACE */}
+          {/* BLOCO DE NOTIFICAÇÃO DA INTERFACE */}
           {notificacao.texto && (
             <div className={`w-full p-4 mb-8 rounded-xl text-sm font-bold text-center shadow-sm border transition-all ${
               notificacao.tipo === 'sucesso' 
@@ -281,10 +286,22 @@ export default function AjustarPlanoPage() {
                 {protocolos.map((passo, index) => (
                   <div key={index} className="flex gap-4 items-center">
                     <div className="w-10 h-10 rounded-2xl bg-slate-800 text-white flex items-center justify-center font-bold text-sm shrink-0">{index + 1}</div>
+                    
                     <input className="flex-1 p-5 bg-white border-2 border-slate-300 rounded-2xl text-sm font-bold text-slate-800" value={passo} onChange={(e) => atualizarPasso(index, e.target.value)} />
+                    
+                    {/* 🌟 NOVO: Botão de remover passo */}
+                    <button 
+                      type="button" 
+                      onClick={() => removerPasso(index)}
+                      className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-500 rounded-2xl border border-red-100 hover:bg-red-500 hover:text-white transition-all shrink-0 font-bold"
+                      title="Remover passo"
+                    >
+                      ✕
+                    </button>
+
                   </div>
                 ))}
-                <button type="button" onClick={() => setProtocolos([...protocolos, ""])} className="w-full py-5 border-2 border-dashed border-slate-400 rounded-2xl text-slate-600 text-[10px] font-black uppercase hover:bg-slate-200 bg-white">+ Adicionar Passo ao Protocolo</button>
+                <button type="button" onClick={() => setProtocolos([...protocolos, ""])} className="w-full py-5 border-2 border-dashed border-slate-400 rounded-2xl text-slate-600 text-[10px] font-black uppercase hover:bg-slate-200 bg-white transition-colors">+ Adicionar Passo ao Protocolo</button>
               </div>
             </div>
 
@@ -297,7 +314,7 @@ export default function AjustarPlanoPage() {
               <button 
                 onClick={(e) => {
                   e.preventDefault(); 
-                  setMostrarModalExclusao(true); // 🌟 Abre o modal em vez de usar window.confirm
+                  setMostrarModalExclusao(true); 
                 }} 
                 className="px-8 py-6 border-2 border-red-200 text-red-500 rounded-[24px] hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all"
               >
