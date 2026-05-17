@@ -24,10 +24,11 @@ export default function CriarPlanoPage() {
   
   const [protocolos, setProtocolos] = useState<string[]>([]);
 
-  // 🌟 NOVO: Estados de Controle e Notificação
+  // Estados de Controle e Notificação
   const [loading, setLoading] = useState(false);
   const [notificacao, setNotificacao] = useState({ texto: "", tipo: "" });
 
+  // 1. EFEITO PARA CARREGAR DADOS INICIAIS (Usuário e Alunos)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -54,6 +55,28 @@ export default function CriarPlanoPage() {
     fetchData();
   }, [router]);
 
+  // 🌟 NOVO: EFEITO DE PREENCHIMENTO AUTOMÁTICO (Apenas Diagnóstico)
+  useEffect(() => {
+    if (alunoSelecionadoId && alunos.length > 0) {
+      // Encontra o objeto completo do aluno que foi selecionado
+      const aluno = alunos.find(a => a.id.toString() === alunoSelecionadoId.toString());
+
+      if (aluno) {
+        // Preenche o Diagnóstico que já veio do cadastro dele
+        if (aluno.diagnostico && aluno.diagnostico !== "Pendente") {
+          setDiagnostico(aluno.diagnostico);
+          
+          // Dá um feedback visual super legal pro professor
+          setNotificacao({ 
+            texto: `✨ Diagnóstico preenchido automaticamente com os dados do aluno!`, 
+            tipo: "sucesso" 
+          });
+        }
+      }
+    }
+  }, [alunoSelecionadoId, alunos]); 
+
+  // Funções de controle do Protocolo de Crise
   const adicionarPasso = () => setProtocolos([...protocolos, ""]);
   const atualizarPasso = (index: number, valor: string) => {
     const novos = [...protocolos];
@@ -65,7 +88,7 @@ export default function CriarPlanoPage() {
   const handleSalvarPlano = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setNotificacao({ texto: "", tipo: "" }); // Limpa notificações anteriores
+    setNotificacao({ texto: "", tipo: "" }); 
 
     try {
       const token = localStorage.getItem("spectra_token");
@@ -83,19 +106,17 @@ export default function CriarPlanoPage() {
       };
       await axios.post("http://localhost:8000/api/peis/", payload, { headers: { Authorization: `Bearer ${token}` } });
       
-      // Exibe sucesso na interface e aguarda 1.5s antes de redirecionar
       setNotificacao({ texto: "✅ Plano e Protocolo salvos com sucesso!", tipo: "sucesso" });
       setTimeout(() => {
         router.push("/planos-ativos");
       }, 1500);
 
     } catch (err: any) {
-      // 🛡️ TRATAMENTO DE ERROS AMIGÁVEL NA INTERFACE
       if (err.response?.status === 401 || err.response?.status === 403) {
         setNotificacao({ texto: "⚠️ Sua sessão expirou. Redirecionando para login...", tipo: "erro" });
         setTimeout(() => router.push("/"), 2000);
       } else if (err.response?.status === 400) {
-        setNotificacao({ texto: "⚠️ Os dados informados são inválidos. Revise o preenchimento dos objetivos e do diagnóstico.", tipo: "erro" });
+        setNotificacao({ texto: "⚠️ Os dados informados são inválidos. Revise o preenchimento.", tipo: "erro" });
       } else {
         setNotificacao({ texto: "⚠️ Erro de comunicação com o servidor ao tentar salvar o PEI. Tente novamente.", tipo: "erro" });
       }
@@ -228,7 +249,7 @@ export default function CriarPlanoPage() {
             <div className="space-y-8">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-4">
-                   🎯 Objetivos a alcançar
+                  🎯 Objetivos a alcançar
                 </label>
                 <textarea 
                   className="w-full text-sm p-6 bg-slate-50 border-2 border-slate-200 rounded-[30px] outline-none focus:border-[#5d5fef] focus:bg-white min-h-[120px] resize-none shadow-sm transition-all text-slate-900 font-bold"
@@ -240,7 +261,7 @@ export default function CriarPlanoPage() {
               
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-4">
-                   🛠️ Metodologia Aplicada
+                  🛠️ Metodologia Aplicada
                 </label>
                 <textarea 
                   className="w-full text-sm p-6 bg-slate-50 border-2 border-slate-200 rounded-[30px] outline-none focus:border-[#5d5fef] focus:bg-white min-h-[120px] resize-none shadow-sm transition-all text-slate-900 font-bold"
@@ -254,7 +275,7 @@ export default function CriarPlanoPage() {
             {/* PROTOCOLO DE MANEJO - Passos com fundo Indigo (#5d5fef) */}
             <div className="pt-8 border-t border-slate-200">
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] block mb-6 ml-4">
-                 🚨 Protocolo de Manejo de Crise
+                🚨 Protocolo de Manejo de Crise
               </label>
               <div className="space-y-4 bg-slate-50 p-8 rounded-[40px] border-2 border-slate-200 shadow-sm">
                 {protocolos.map((passo, index) => (

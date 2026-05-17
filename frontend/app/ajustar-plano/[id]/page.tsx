@@ -27,6 +27,10 @@ export default function AjustarPlanoPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
+  // Estados de Notificação e Modal
+  const [notificacao, setNotificacao] = useState({ texto: "", tipo: "" });
+  const [mostrarModalExclusao, setMostrarModalExclusao] = useState(false); // 🌟 NOVO: Controla o modal de exclusão
 
   useEffect(() => {
     const carregarTudo = async () => {
@@ -38,7 +42,7 @@ export default function AjustarPlanoPage() {
         }
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        // 1. Carrega dados do usuário para o Header
+        // 1. Carrega dados do usuário
         const resUser = await axios.get("http://localhost:8000/api/me/", config);
         setUsuario({ 
           nome: resUser.data.nome || resUser.data.username, 
@@ -82,6 +86,8 @@ export default function AjustarPlanoPage() {
 
   const handleConfirmarAjustes = async () => {
     setSaving(true);
+    setNotificacao({ texto: "", tipo: "" }); 
+    
     try {
       const token = localStorage.getItem("spectra_token");
       const payload = {
@@ -100,34 +106,72 @@ export default function AjustarPlanoPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      alert("Plano atualizado com sucesso!");
-      router.push("/planos-ativos"); 
+      setNotificacao({ texto: "✅ Plano atualizado com sucesso!", tipo: "sucesso" });
+      setTimeout(() => {
+        router.push("/planos-ativos"); 
+      }, 1500);
+      
     } catch (error) {
-      alert("Erro ao salvar ajustes.");
+      setNotificacao({ texto: "⚠️ Erro ao salvar ajustes. Verifique se os campos estão preenchidos.", tipo: "erro" });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleExcluirPlano = async () => {
-    if (window.confirm("⚠️ Excluir este plano permanentemente?")) {
-      try {
-        const token = localStorage.getItem("spectra_token");
-        await axios.delete(`http://localhost:8000/api/peis/${id}/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+  // 🌟 NOVA FUNÇÃO: Executa a exclusão após confirmar no Modal
+  const executarExclusao = async () => {
+    setMostrarModalExclusao(false); // Fecha o modal
+    setNotificacao({ texto: "", tipo: "" });
+    try {
+      const token = localStorage.getItem("spectra_token");
+      await axios.delete(`http://localhost:8000/api/peis/${id}/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setNotificacao({ texto: "🗑️ Plano excluído com sucesso!", tipo: "sucesso" });
+      setTimeout(() => {
         router.push("/planos-ativos");
-      } catch (error) {
-        alert("Erro ao excluir.");
-      }
+      }, 1500);
+      
+    } catch (error) {
+      setNotificacao({ texto: "⚠️ Erro ao excluir este plano.", tipo: "erro" });
     }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-bold">Sincronizando SPECTRA...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex flex-col items-center">
+    <div className="min-h-screen bg-slate-50 font-sans flex flex-col items-center relative">
       
+      {/* 🌟 NOVO: MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {mostrarModalExclusao && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl transform transition-all animate-in zoom-in-95 duration-200 border border-slate-200">
+            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-3xl mb-6 border border-red-100 shadow-sm mx-auto">
+              ⚠️
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 mb-2 text-center tracking-tight">Excluir Plano?</h3>
+            <p className="text-slate-600 text-sm font-medium mb-8 text-center px-2">
+              Esta ação é permanente e não pode ser desfeita. Tem certeza que deseja apagar este PEI?
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setMostrarModalExclusao(false)} 
+                className="flex-1 py-4 bg-white border-2 border-slate-200 text-slate-600 font-bold text-sm uppercase tracking-wider rounded-2xl hover:bg-slate-50 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={executarExclusao} 
+                className="flex-1 py-4 bg-red-500 text-white font-bold text-sm uppercase tracking-wider rounded-2xl hover:bg-red-600 shadow-lg hover:shadow-xl transition-all"
+              >
+                Sim, excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Padronizado */}
       <header className="w-full bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50 mb-8">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center h-20">
@@ -160,6 +204,17 @@ export default function AjustarPlanoPage() {
             <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-2 text-center">Ajustar Plano</h1>
             <p className="text-slate-600 text-sm font-medium">Personalize as diretrizes deste prontuário</p>
           </div>
+
+          {/* 🌟 BLOCO DE NOTIFICAÇÃO DA INTERFACE */}
+          {notificacao.texto && (
+            <div className={`w-full p-4 mb-8 rounded-xl text-sm font-bold text-center shadow-sm border transition-all ${
+              notificacao.tipo === 'sucesso' 
+                ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                : 'bg-red-50 text-red-600 border-red-200'
+            }`}>
+              {notificacao.texto}
+            </div>
+          )}
 
           <div className="space-y-10">
             
@@ -239,7 +294,15 @@ export default function AjustarPlanoPage() {
               <button onClick={handleConfirmarAjustes} disabled={saving} className="flex-[2] py-6 bg-slate-900 text-white font-black text-sm uppercase rounded-[24px] hover:bg-black shadow-xl transition-all">
                 {saving ? 'Processando...' : 'Salvar Alterações'}
               </button>
-              <button onClick={handleExcluirPlano} className="px-8 py-6 border-2 border-red-200 text-red-500 rounded-[24px] hover:bg-red-50 transition-all">🗑️</button>
+              <button 
+                onClick={(e) => {
+                  e.preventDefault(); 
+                  setMostrarModalExclusao(true); // 🌟 Abre o modal em vez de usar window.confirm
+                }} 
+                className="px-8 py-6 border-2 border-red-200 text-red-500 rounded-[24px] hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all"
+              >
+                🗑️
+              </button>
             </div>
 
           </div>
