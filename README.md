@@ -1,13 +1,13 @@
 # 🧠 SPECTRA
 
-O **SPECTRA** é um ecossistema digital inteligente de inclusão educacional, desenvolvido para auxiliar professores e tutores no acompanhamento individualizado de alunos com neurodiversidades (TEA, TDAH, TOD, Dislexia, entre outros).
+O **SPECTRA** é um ecossistema digital inteligente de inclusão educacional, desenvolvido para auxiliar professores e tutores no acompanhamento individualizado de alunos com neurodiversidades (TEA, TDAH, entre outros).
 
 O sistema permite a gestão completa de **Planos Educacionais Individualizados (PEI)**, oferecendo suporte para registro de evolução, acompanhamento de métricas e protocolos de manejo de crise em tempo real.
 
 ## 🚀 Funcionalidades Principais
 
 * **Gestão de Prontuários:** Cadastro intuitivo com geração automática de matrícula.
-* **Motor de Inteligência Adaptativa:** Sugestão automática de metodologias e protocolos de crise personalizados por diagnóstico.
+* **Motor de Inteligência Adaptativa:** Sugestão de metodologias e protocolos de crise personalizados por diagnóstico.
 * **Dashboard de Evolução:** Monitoramento gráfico do desenvolvimento em *Comunicação, Socialização, Humor e Motor*.
 * **Acessibilidade:** Integração nativa com o **VLibras** para inclusão universal.
 * **Documentação Oficial:** Sistema de geração de prontuários em PDF/Impressão.
