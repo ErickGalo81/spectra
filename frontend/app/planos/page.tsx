@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import Swal from "sweetalert2"; // Importação mantida para o padrão do Sair
 
 export default function CriarPlanoPage() {
   const router = useRouter();
@@ -200,48 +201,94 @@ export default function CriarPlanoPage() {
     }
   };
 
+  // Função de Sair consistente com a Home
+  const handleLogout = () => {
+    Swal.fire({
+      title: 'Sair do Sistema?',
+      text: "Tem certeza de que deseja encerrar a sua sessão no SPECTRA?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#2563eb', 
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Sim, sair',
+      cancelButtonText: 'Cancelar',
+      borderRadius: '24px'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem("spectra_token");
+        localStorage.removeItem("refresh_token");
+        router.push("/");
+      }
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex flex-col items-center">
+    <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900 antialiased selection:bg-blue-100 pb-16">
       
-      <header className="w-full bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50 mb-8">
-        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center h-20">
-          <Link href="/home" className="flex items-center gap-2">
-            <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-700 to-slate-900 tracking-tighter">
-              🧠 SPECTRA
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-[#5d5fef] flex items-center justify-center text-white font-bold shadow-md border border-[#4a4be0]">
-              {usuario.iniciais}
+      {/* HEADER PROFISSIONAL SAAS */}
+      <header className="w-full bg-white/70 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center h-20">
+          <div className="flex-shrink-0 flex items-center">
+            <Link href="/home" className="flex items-center gap-2 group">
+              <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-800 to-slate-950 tracking-tighter transition-all duration-300 group-hover:from-[#2563eb] group-hover:to-blue-500">
+                🧠 SPECTRA
+              </span>
+            </Link>
+          </div>
+
+          <nav className="hidden md:flex items-center space-x-2 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/50 shadow-inner">
+            <Link href="/home" className="text-slate-500 hover:text-slate-800 px-5 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all">Painel</Link>
+            <Link href="/planos-ativos" className="text-[#2563eb] bg-white px-5 py-2 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm border border-slate-100 transition-all">Planos</Link>
+            <Link href="/sobre" className="text-slate-500 hover:text-slate-800 px-5 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all">Sobre</Link>
+          </nav>
+
+          <div className="flex items-center gap-5">
+            <div className="text-right hidden sm:block border-r border-slate-200 pr-5">
+              <p className="text-sm font-extrabold text-slate-900 leading-none">{usuario.nome}</p>
+              <p className="text-[10px] font-black text-[#2563eb] uppercase mt-1 tracking-widest">Professor</p>
             </div>
-            <div className="hidden md:flex flex-col text-left">
-              <span className="text-slate-900 font-bold text-sm leading-none">{usuario.nome}</span>
-              <span className="text-[#5d5fef] text-[10px] font-black uppercase mt-1 tracking-wider">Professor</span>
+            
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#2563eb] flex items-center justify-center text-white font-black text-sm shadow-md shadow-blue-200 ring-2 ring-white">
+                {usuario.iniciais}
+              </div>
+              
+              <button 
+                onClick={handleLogout}
+                className="group p-2.5 bg-white hover:bg-red-50 text-slate-400 rounded-xl transition-all border border-slate-200 shadow-sm hover:border-red-200 hover:text-red-500"
+                title="Sair do Sistema"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-colors">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="w-full max-w-5xl px-4 pb-12">
-        <div className="bg-white rounded-[40px] px-10 py-12 shadow-md border border-slate-200 relative">
+      <main className="w-full max-w-5xl mx-auto px-6 py-10">
+        <div className="bg-white rounded-[32px] px-8 py-10 md:px-12 md:py-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 relative">
           
           <button 
             onClick={() => router.push('/planos-ativos')}
-            className="absolute left-10 top-10 flex items-center gap-2 text-slate-400 hover:text-[#5d5fef] transition-colors group"
+            className="absolute left-8 top-8 flex items-center gap-2 text-slate-400 hover:text-[#2563eb] transition-colors group"
           >
             <span className="text-xl group-hover:-translate-x-1 transition-transform">←</span>
-            <span className="text-xs font-black uppercase tracking-widest text-slate-500">Voltar</span>
+            <span className="text-xs font-black uppercase tracking-widest">Voltar</span>
           </button>
 
-          <div className="flex flex-col items-center mb-10">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Novo Plano</h1>
-            <p className="text-slate-600 text-sm font-medium">Configure as diretrizes do PEI e o Manejo de Crise</p>
+          <div className="flex flex-col items-center mb-10 mt-6 text-center">
+            <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">Novo Plano Educacional</h1>
+            <p className="text-slate-500 text-sm font-medium">Configure as diretrizes do PEI e o Manejo de Crise do aluno</p>
           </div>
 
           {notificacao.texto && (
-            <div className={`w-full p-4 mb-8 rounded-xl text-sm font-bold text-center shadow-sm border transition-all ${
+            <div className={`w-full p-4 mb-8 rounded-2xl text-sm font-bold text-center shadow-sm border transition-all ${
               notificacao.tipo === 'sucesso' 
-                ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                ? 'bg-teal-50 text-teal-700 border-teal-200' 
                 : 'bg-red-50 text-red-600 border-red-200'
             }`}>
               {notificacao.texto}
@@ -250,11 +297,12 @@ export default function CriarPlanoPage() {
 
           <form onSubmit={handleSalvarPlano} className="space-y-10">
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-8 rounded-[32px] border border-slate-200 shadow-inner">
+            {/* GRID DE INFORMAÇÕES BÁSICAS */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-6 md:p-8 rounded-[24px] border border-slate-200 shadow-sm">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">Selecionar Aluno</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Selecionar Aluno</label>
                 <select 
-                  className="w-full font-bold text-sm p-4 bg-white border-2 border-slate-200 rounded-2xl outline-none focus:border-[#5d5fef] transition-all shadow-sm text-slate-900"
+                  className="w-full font-bold text-sm p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm text-slate-800"
                   value={alunoSelecionadoId}
                   onChange={(e) => setAlunoSelecionadoId(e.target.value)}
                   required
@@ -265,11 +313,11 @@ export default function CriarPlanoPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">Título do Plano</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Título do Plano</label>
                 <input 
                   type="text" 
                   placeholder="Ex: Plano Semestral"
-                  className="w-full font-bold text-sm p-4 bg-white border-2 border-slate-200 rounded-2xl outline-none focus:border-[#5d5fef] transition-all shadow-sm text-slate-900 placeholder-slate-400"
+                  className="w-full font-bold text-sm p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm text-slate-800 placeholder-slate-400"
                   value={nomePlano}
                   onChange={(e) => setNomePlano(e.target.value)}
                   required
@@ -277,11 +325,11 @@ export default function CriarPlanoPage() {
               </div>
 
               <div className="space-y-2 relative">
-                <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-2">Diagnóstico</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-2">Diagnóstico</label>
                 <input 
                   type="text" 
                   placeholder="Ex: TEA, TDAH, TOD..."
-                  className="w-full font-bold text-sm p-4 bg-white border-2 border-slate-200 rounded-2xl outline-none focus:border-[#5d5fef] transition-all shadow-sm text-slate-900 placeholder-slate-400"
+                  className="w-full font-bold text-sm p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm text-slate-800 placeholder-slate-400"
                   value={diagnostico}
                   onChange={(e) => setDiagnostico(e.target.value)}
                   required
@@ -289,8 +337,9 @@ export default function CriarPlanoPage() {
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-[32px] border-2 border-slate-200 shadow-lg">
-              <h2 className="text-xs font-black text-slate-800 mb-8 uppercase tracking-[0.2em] text-center">Evolução do Aluno</h2>
+            {/* EVOLUÇÃO DO ALUNO */}
+            <div className="bg-white p-6 md:p-8 rounded-[24px] border border-slate-200 shadow-sm">
+              <h2 className="text-xs font-black text-slate-800 mb-8 uppercase tracking-[0.2em] text-center border-b border-slate-100 pb-4">Indicadores de Evolução Inicial</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                 {[
                   { label: "Comunicação", val: comunicacao, set: setComunicacao },
@@ -300,83 +349,85 @@ export default function CriarPlanoPage() {
                 ].map((item, i) => (
                   <div key={i} className="space-y-4">
                     <div className="flex justify-between items-center px-1">
-                      <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">{item.label}</span>
-                      <span className="text-xs font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">{item.val}%</span>
+                      <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">{item.label}</span>
+                      <span className="text-xs font-black text-[#2563eb] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">{item.val}%</span>
                     </div>
                     <input 
                       type="range" min="0" max="100"
                       value={item.val} 
                       onChange={(e) => item.set(Number(e.target.value))} 
-                      className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#5d5fef] border border-slate-300" 
+                      className="w-full h-2.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#2563eb] shadow-inner" 
                     />
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* OBJETIVOS E METODOLOGIA */}
             <div className="space-y-8">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-4">
-                  🎯 Objetivos a alcançar
+                <label className="text-xs font-black text-[#2563eb] uppercase tracking-widest ml-2 flex items-center gap-2">
+                  <span className="text-base">🎯</span> Objetivos a alcançar
                 </label>
                 <textarea 
-                  className="w-full text-sm p-6 bg-slate-50 border-2 border-slate-200 rounded-[30px] outline-none focus:border-[#5d5fef] focus:bg-white min-h-[120px] resize-none shadow-sm transition-all text-slate-900 font-bold"
-                  placeholder="Quais as metas pedagógicas?"
+                  className="w-full text-sm p-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-blue-500/10 focus:bg-white min-h-[120px] resize-none shadow-sm transition-all text-slate-800 font-medium leading-relaxed"
+                  placeholder="Quais as metas pedagógicas para este aluno?"
                   value={objetivos}
                   onChange={(e) => setObjetivos(e.target.value)}
                 />
               </div>
               
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest ml-4">
-                  🛠️ Metodologia Aplicada & Passo a Passo
+                <label className="text-xs font-black text-[#2563eb] uppercase tracking-widest ml-2 flex items-center gap-2">
+                  <span className="text-base">🛠️</span> Metodologia Aplicada & Passo a Passo
                 </label>
                 
                 {metodologia === ultimaMetodologiaSugerida && ultimaMetodologiaSugerida !== "" && (
-                   <p className="text-[11px] text-[#5d5fef] font-bold mb-2 ml-4">
-                     ✨ Plano de ação estruturado pelo SPECTRA. Sinta-se à vontade para editar.
-                   </p>
+                   <div className="bg-blue-50 border border-blue-100 text-[#2563eb] px-4 py-3 rounded-xl text-[11px] font-bold ml-2 shadow-sm inline-block">
+                      ✨ Plano de ação estruturado pelo SPECTRA. Sinta-se à vontade para editar ou aprimorar.
+                   </div>
                 )}
 
-                {/* 🌟 AUMENTEI O MIN-H PARA 250PX PARA ACOMODAR O PASSO A PASSO COM CONFORTO */}
                 <textarea 
-                  className="w-full text-sm p-6 bg-slate-50 border-2 border-slate-200 rounded-[30px] outline-none focus:border-[#5d5fef] focus:bg-white min-h-[280px] resize-none shadow-sm transition-all text-slate-900 font-bold leading-relaxed whitespace-pre-line"
-                  placeholder="Como o conteúdo será adaptado e executado em sala?"
+                  className="w-full text-sm p-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-blue-500/10 focus:bg-white min-h-[280px] resize-none shadow-sm transition-all text-slate-800 font-medium leading-relaxed whitespace-pre-line"
+                  placeholder="Como o conteúdo será adaptado e executado em sala de aula?"
                   value={metodologia}
                   onChange={(e) => setMetodologia(e.target.value)}
                 />
               </div>
             </div>
 
+            {/* PROTOCOLO DE CRISE */}
             <div className="pt-8 border-t border-slate-200">
-              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] block mb-6 ml-4">
-                🚨 Protocolo de Manejo de Crise
+              <label className="text-xs font-black text-red-600 uppercase tracking-[0.2em] block mb-6 ml-2 flex items-center gap-2">
+                <span className="text-base">🚨</span> Protocolo de Manejo de Crise
               </label>
               
               {ultimoDiagnosticoDetectado && protocolos.length > 0 && (
-                 <p className="text-[11px] text-[#5d5fef] font-bold mb-4 ml-4">
-                   ✨ Protocolos sugeridos para {ultimoDiagnosticoDetectado}. Adicione, edite ou remova passos.
-                 </p>
+                 <div className="bg-blue-50 border border-blue-100 text-[#2563eb] px-4 py-3 rounded-xl text-[11px] font-bold mb-6 ml-2 shadow-sm inline-block">
+                   ✨ Protocolos sugeridos baseados no diagnóstico de {ultimoDiagnosticoDetectado}. Você pode adicionar, editar ou remover passos.
+                 </div>
               )}
 
-              <div className="space-y-4 bg-slate-50 p-8 rounded-[40px] border-2 border-slate-200 shadow-sm">
+              <div className="space-y-4 bg-slate-50 p-6 md:p-8 rounded-[32px] border border-slate-200 shadow-sm">
                 {protocolos.map((passo, index) => (
-                  <div key={index} className="flex gap-4 items-center group animate-in fade-in slide-in-from-bottom-2">
-                    <div className="w-10 h-10 rounded-2xl bg-[#5d5fef] text-white shadow-md flex items-center justify-center font-bold text-sm shrink-0 border border-[#4a4be0]">
+                  <div key={index} className="flex gap-4 items-start group animate-in fade-in slide-in-from-bottom-2">
+                    <div className="w-10 h-10 mt-1 rounded-xl bg-white text-[#2563eb] shadow-sm flex items-center justify-center font-black text-sm shrink-0 border border-slate-200">
                       {index + 1}
                     </div>
                     <textarea
                       value={passo}
                       onChange={(e) => atualizarPasso(index, e.target.value)}
-                      placeholder="Passo de intervenção..."
-                      className="flex-1 p-4 bg-white border-2 border-slate-200 rounded-2xl text-sm outline-none focus:border-[#5d5fef] transition-all shadow-sm font-bold text-slate-900 resize-none min-h-[60px]"
+                      placeholder="Descreva o passo de intervenção..."
+                      className="flex-1 p-4 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:border-[#2563eb] focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm font-medium text-slate-800 resize-none min-h-[60px]"
                     />
                     <button 
                       type="button" 
                       onClick={() => removerPasso(index)}
-                      className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      className="p-3 mt-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                      title="Remover Passo"
                     >
-                      🗑️
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     </button>
                   </div>
                 ))}
@@ -384,7 +435,7 @@ export default function CriarPlanoPage() {
                 <button 
                   type="button"
                   onClick={adicionarPasso}
-                  className="w-full py-5 border-2 border-dashed border-slate-300 rounded-2xl text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 hover:text-[#5d5fef] hover:border-[#5d5fef] transition-all bg-white"
+                  className="w-full py-5 border-2 border-dashed border-slate-300 rounded-2xl text-slate-500 text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 hover:text-[#2563eb] hover:border-[#2563eb] transition-all bg-white"
                 >
                   + ADICIONAR PASSO AO PROTOCOLO
                 </button>
@@ -394,11 +445,11 @@ export default function CriarPlanoPage() {
             <button 
               type="submit"
               disabled={loading}
-              className={`w-full py-6 text-white font-black text-sm uppercase tracking-[0.2em] rounded-[24px] transition-all shadow-xl ${
-                loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-[#5d5fef] hover:brightness-110 active:scale-95'
+              className={`w-full py-5 text-white font-black text-sm uppercase tracking-[0.2em] rounded-2xl transition-all shadow-lg ${
+                loading ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-[#2563eb] hover:bg-[#1d4ed8] shadow-blue-500/30 active:scale-95 hover:shadow-blue-500/50'
               }`}
             >
-              {loading ? 'Salvando no Banco...' : 'Finalizar e Salvar PEI'}
+              {loading ? 'Salvando no Banco de Dados...' : 'Finalizar e Salvar PEI'}
             </button>
 
           </form>
